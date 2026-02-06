@@ -61,3 +61,8 @@ Thumbs.db
 *.pyc
 ui_*.py
 *_rc.py
+
+
+# Added by cargo
+
+/target
