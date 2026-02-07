@@ -150,6 +150,12 @@ impl Daemon {
                 eprintln!("[vitamink] → Enabling dummy plug");
                 display::enable_dummy_plug(&self.config.dummy_plug)?;
 
+                eprintln!("[vitamink] → Waiting for DRM framebuffer...");
+                display::wait_for_drm_active(
+                    &self.config.dummy_plug,
+                    Duration::from_secs(10),
+                )?;
+
                 eprintln!("[vitamink] → Starting Sunshine");
                 sunshine::start()?;
 

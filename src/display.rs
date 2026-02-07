@@ -228,6 +228,43 @@ pub fn disable_dummy_plug(name: &str) -> Result<(), String> {
     Ok(())
 }
 
+// Checks that a display has an active DRM framebuffer by reading sysfs.
+// Sunshine uses KMS/DRM to capture — it needs `enabled` to be "enabled"
+// at the kernel level, not just in KDE.
+pub fn is_drm_active(name: &str) -> bool {
+    let paths = [
+        format!("/sys/class/drm/card1-{name}/enabled"),
+        format!("/sys/class/drm/card0-{name}/enabled"),
+    ];
+
+    for path in &paths {
+        if let Ok(content) = std::fs::read_to_string(path) {
+            return content.trim() == "enabled";
+        }
+    }
+
+    false
+}
+
+// Waits up to `timeout` for DRM to report the display as active.
+// KDE's kscreen-doctor enables the display asynchronously — there's a
+// brief delay before the kernel DRM layer reflects the change.
+pub fn wait_for_drm_active(name: &str, timeout: std::time::Duration) -> Result<(), String> {
+    use std::time::Instant;
+
+    let start = Instant::now();
+    let poll = std::time::Duration::from_millis(500);
+
+    while start.elapsed() < timeout {
+        if is_drm_active(name) {
+            return Ok(());
+        }
+        std::thread::sleep(poll);
+    }
+
+    Err(format!("Timed out waiting for {name} DRM framebuffer to become active"))
+}
+
 // ---- Tests ----
 
 #[cfg(test)]
